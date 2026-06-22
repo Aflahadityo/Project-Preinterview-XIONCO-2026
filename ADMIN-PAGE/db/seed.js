@@ -16,6 +16,7 @@ const products = [
 const seed = async () => {
   let client;
   try {
+    await db.initPromise; // Wait for tables and columns to be initialized/migrated
     client = await db.connect();
     console.log('Seeding PostgreSQL database...');
     await client.query('BEGIN');

@@ -76,10 +76,11 @@ const initDb = async () => {
 };
 
 // Start initialization
-initDb();
+const initPromise = initDb();
 
 module.exports = {
   query: (text, params) => pool.query(text, params),
   connect: () => pool.connect(),
-  pool
+  pool,
+  initPromise
 };
