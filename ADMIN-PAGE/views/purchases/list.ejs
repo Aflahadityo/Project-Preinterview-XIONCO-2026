@@ -1,0 +1,122 @@
+
+<!-- List Transactions Card -->
+<div class="card card-light">
+  <div class="card-header-flex" style="margin-bottom: var(--space-2); border-bottom: none;">
+    <h3>Daftar Transaksi Pembelian</h3>
+    <a href="/purchases/add" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg"></i> Catat Pembelian Baru
+    </a>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="d-flex gap-2" style="margin-bottom: var(--space-6); padding-bottom: var(--space-4); border-bottom: 1px solid var(--accent-border);">
+    <a href="/purchases" class="btn btn-secondary btn-sm <%= selectedStatus === 'all' ? 'btn-primary' : '' %>" style="<%= selectedStatus === 'all' ? 'background: var(--accent-black); color: white;' : 'font-weight: 500;' %>">
+      Semua Transaksi
+    </a>
+    <a href="/purchases?status=active" class="btn btn-secondary btn-sm <%= selectedStatus === 'active' ? 'btn-primary' : '' %>" style="<%= selectedStatus === 'active' ? 'background: var(--accent-black); color: white;' : 'font-weight: 500;' %>">
+      Aktif
+    </a>
+    <a href="/purchases?status=cancelled" class="btn btn-secondary btn-sm <%= selectedStatus === 'cancelled' ? 'btn-primary' : '' %>" style="<%= selectedStatus === 'cancelled' ? 'background: var(--accent-black); color: white;' : 'font-weight: 500;' %>">
+      Dibatalkan
+    </a>
+  </div>
+
+  <% if (purchases.length === 0) { %>
+    <div style="text-align: center; padding: var(--space-10) 0;" class="text-muted">
+      <i class="bi bi-receipt" style="font-size: 40px; display: block; margin-bottom: var(--space-4);"></i>
+      Tidak ada transaksi pembelian dengan status tersebut.
+    </div>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nama Produk / Kategori</th>
+            <th>Harga Satuan</th>
+            <th>Qty</th>
+            <th>Total Harga</th>
+            <th>Tanggal Pembelian</th>
+            <th>Catatan</th>
+            <th>Status</th>
+            <th style="width: 150px; text-align: right;">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% purchases.forEach(tx => { %>
+            <tr>
+              <td class="font-semibold">#<%= tx.id %></td>
+              <td>
+                <div class="font-semibold"><%= tx.product_name %></div>
+                <span class="text-muted" style="font-size: 11px;"><%= tx.product_category %></span>
+              </td>
+              <td><%= formatRupiah(tx.unit_price) %></td>
+              <td><%= tx.quantity %> unit</td>
+              <td class="font-semibold"><%= formatRupiah(tx.total_price) %></td>
+              <td><%= formatDate(tx.purchased_at) %></td>
+              <td style="max-width: 180px; word-wrap: break-word;"><%= tx.notes || '-' %></td>
+              <td>
+                <% if (tx.status === 'active') { %>
+                  <span class="status-badge status-active">
+                    <i class="bi bi-check-circle-fill"></i> Aktif
+                  </span>
+                <% } else { %>
+                  <div class="d-flex flex-column">
+                    <span class="status-badge status-cancel" style="margin-bottom: 2px;">
+                      <i class="bi bi-x-circle-fill"></i> Batal
+                    </span>
+                    <span class="text-muted" style="font-size: 10px;">Batal: <%= formatDate(tx.cancelled_at) %></span>
+                  </div>
+                <% } %>
+              </td>
+              <td style="text-align: right;">
+                <% if (tx.status === 'active') { %>
+                  <form action="/purchases/<%= tx.id %>/cancel" method="POST" class="cancel-form">
+                    <button type="submit" class="btn btn-danger btn-sm" style="padding: 6px 12px;">
+                      <i class="bi bi-trash"></i> Cancel
+                    </button>
+                  </form>
+                <% } else { %>
+                  <span class="text-muted" style="font-size: 13px;">-</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<!-- SweetAlert2 Confirmation Script for Cancelling Transactions -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const cancelForms = document.querySelectorAll('.cancel-form');
+    cancelForms.forEach(form => {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        Swal.fire({
+          title: 'BATALKAN TRANSAKSI?',
+          text: 'Stok produk akan dikembalikan secara otomatis ke inventaris.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'YA, BATALKAN',
+          cancelButtonText: 'KEMBALI',
+          customClass: {
+            confirmButton: 'btn btn-primary',
+            cancelButton: 'btn btn-secondary'
+          },
+          buttonsStyling: false,
+          background: '#FFFFFF',
+          color: '#111111',
+          iconColor: '#EF4444'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            form.submit();
+          }
+        });
+      });
+    });
+  });
+</script>

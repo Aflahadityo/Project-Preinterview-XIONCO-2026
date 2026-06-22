@@ -1,0 +1,54 @@
+<div class="dashboard-layout" style="grid-template-columns: 2fr 1.2fr; gap: var(--space-6);">
+  <!-- Left Side: List Categories -->
+  <div class="card card-light">
+    <div class="card-header-flex" style="border-bottom: none; margin-bottom: var(--space-4);">
+      <h3>Daftar Kategori Terdaftar</h3>
+      <span class="status-badge status-active"><%= categories.length %> Kategori</span>
+    </div>
+    
+    <% if (categories.length === 0) { %>
+      <div style="text-align: center; padding: var(--space-10) 0;" class="text-muted">
+        <i class="bi bi-tag" style="font-size: 40px; display: block; margin-bottom: var(--space-4);"></i>
+        Belum ada kategori terdaftar.
+      </div>
+    <% } else { %>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">ID</th>
+              <th>Nama Kategori</th>
+              <th>Tanggal Dibuat</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% categories.forEach(cat => { %>
+              <tr>
+                <td class="font-semibold">#<%= cat.id %></td>
+                <td><span class="status-badge status-progress font-semibold"><%= cat.name %></span></td>
+                <td><%= formatDate(cat.created_at) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Right Side: Add Category Form -->
+  <div class="card card-light" style="height: fit-content;">
+    <div class="card-header-flex" style="border-bottom: none; margin-bottom: var(--space-4);">
+      <h3>Tambah Kategori Baru</h3>
+    </div>
+    
+    <form action="/categories/add" method="POST">
+      <div class="form-group">
+        <label for="name" class="form-label">Nama Kategori</label>
+        <input type="text" id="name" name="name" class="form-input" placeholder="Contoh: LIGHTING..." required autocomplete="off" style="text-transform: uppercase;">
+      </div>
+      <button type="submit" class="btn btn-primary w-full mt-2" style="height: 45px;">
+        <i class="bi bi-plus-circle-fill"></i> Simpan Kategori
+      </button>
+    </form>
+  </div>
+</div>

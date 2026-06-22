@@ -1,0 +1,126 @@
+
+<!-- List Card -->
+<div class="card card-light">
+  <div class="card-header-flex">
+    <h3>Inventaris & Stok Produk</h3>
+    <a href="/products/add" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg"></i> Tambah Produk Baru
+    </a>
+  </div>
+
+  <% if (products.length === 0) { %>
+    <div style="text-align: center; padding: var(--space-10) 0;" class="text-muted">
+      <i class="bi bi-box-seam" style="font-size: 40px; display: block; margin-bottom: var(--space-4);"></i>
+      Belum ada produk terdaftar. Silakan tambahkan produk baru.
+    </div>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nama Produk</th>
+            <th>Kategori</th>
+            <th>Harga Satuan</th>
+            <th>Stok Saat Ini</th>
+            <th style="width: 220px;">Aksi Tambah Stok (Restock)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% products.forEach(prod => { %>
+            <tr>
+              <td class="font-semibold">#<%= prod.id %></td>
+              <td class="font-semibold"><%= prod.name %></td>
+              <td><span class="status-badge status-progress"><%= prod.category || 'Lain-lain' %></span></td>
+              <td class="font-semibold"><%= formatRupiah(prod.price) %></td>
+              <td>
+                <% if (prod.quantity <= 0) { %>
+                  <span class="status-badge status-cancel font-semibold">Habis (0)</span>
+                <% } else if (prod.quantity <= 5) { %>
+                  <span class="status-badge status-cancel">Kritis (<%= prod.quantity %>)</span>
+                <% } else { %>
+                  <span class="status-badge status-active"><%= prod.quantity %> Unit</span>
+                <% } %>
+              </td>
+              <td>
+                <button type="button" class="btn btn-secondary btn-sm restock-btn" 
+                        data-id="<%= prod.id %>" 
+                        data-name="<%= prod.name %>" 
+                        data-qty="<%= prod.quantity %>"
+                        style="padding: 6px 12px; height: 33px;">
+                  <i class="bi bi-plus-lg"></i> Restock
+                </button>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<!-- Custom Restock Modal Overlay -->
+<div class="modal-overlay" id="restockModalOverlay">
+  <div class="modal-container">
+    <div class="modal-header">
+      <h3>Restock Produk</h3>
+      <button type="button" class="modal-close" onclick="closeRestockModal()">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+    <form id="restockForm" method="POST" action="">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nama Produk</label>
+          <input type="text" id="modalProductName" class="form-input" style="background-color: var(--accent-gray);" readonly>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Stok Saat Ini</label>
+          <input type="text" id="modalCurrentStock" class="form-input" style="background-color: var(--accent-gray);" readonly>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Jumlah Restock</label>
+          <input type="number" name="quantity" id="modalRestockQty" min="1" class="form-input" value="10" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeRestockModal()">Batal</button>
+        <button type="submit" class="btn btn-primary btn-sm">Simpan Stok</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Control Script -->
+<script>
+  const modalOverlay = document.getElementById('restockModalOverlay');
+  const restockForm = document.getElementById('restockForm');
+  const modalProductName = document.getElementById('modalProductName');
+  const modalCurrentStock = document.getElementById('modalCurrentStock');
+  const modalRestockQty = document.getElementById('modalRestockQty');
+
+  document.querySelectorAll('.restock-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const productId = btn.getAttribute('data-id');
+      const productName = btn.getAttribute('data-name');
+      const currentStock = btn.getAttribute('data-qty');
+
+      restockForm.action = `/products/${productId}/restock`;
+      modalProductName.value = productName;
+      modalCurrentStock.value = `${currentStock} Unit`;
+      modalRestockQty.value = 10;
+      modalOverlay.classList.add('show');
+    });
+  });
+
+  function closeRestockModal() {
+    modalOverlay.classList.remove('show');
+  }
+
+  // Close when clicking outside of modal container
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) {
+      closeRestockModal();
+    }
+  });
+</script>

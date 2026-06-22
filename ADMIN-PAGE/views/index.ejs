@@ -1,0 +1,325 @@
+<div class="d-flex flex-column gap-2" style="margin-bottom: var(--space-6);">
+  <h2 style="font-size: 26px; font-weight: 700; color: var(--text-primary);">Halo, Selamat Datang! 👋</h2>
+  <p class="text-muted" style="font-size: 14px;">Berikut adalah ringkasan stok furnitur dan transaksi pembelian XIONCO saat ini.</p>
+</div>
+
+<!-- Stats Row -->
+<div class="stats-grid">
+  <!-- Card Dark (Featured Stat - Total Revenue) -->
+  <div class="card card-dark">
+    <div class="card-title">PENDAPATAN AKTIF</div>
+    <div class="stat-number"><%= formatRupiah(totalRevenue) %></div>
+    <div class="stat-label">Total nilai dari seluruh transaksi pembelian aktif</div>
+    
+    <div class="mini-stats-container">
+      <div class="mini-stat-card">
+        <div class="mini-number"><%= totalActivePurchases %></div>
+        <div class="mini-label">Transaksi Aktif</div>
+      </div>
+      <div class="mini-stat-card">
+        <div class="mini-number"><%= totalCancelledPurchases %></div>
+        <div class="mini-label">Dibatalkan</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card Light (Total Produk) -->
+  <div class="card card-light justify-between">
+    <div>
+      <div class="card-title card-title-light">TOTAL VARIASI FURNITUR</div>
+      <div class="card-value mt-4" style="font-size: 40px;"><%= totalProducts %></div>
+      <p class="text-muted mt-4" style="font-size: 13px;">Macam variasi produk terdaftar di katalog furnitur XIONCO.</p>
+    </div>
+    <a href="/products" class="btn btn-secondary btn-sm mt-4 w-full">
+      <i class="bi bi-eye"></i> Lihat Katalog
+    </a>
+  </div>
+
+  <!-- Card Light (Aksi Cepat) -->
+  <div class="card card-light justify-between">
+    <div>
+      <div class="card-title card-title-light">PINTASAN ADMIN</div>
+      <p class="text-muted mt-4" style="font-size: 13px;">Kelola katalog furnitur dan catat pembelian secara cepat dari sini.</p>
+    </div>
+    <div class="d-flex flex-column gap-2 w-full mt-4">
+      <a href="/purchases/add" class="btn btn-primary w-full">
+        <i class="bi bi-plus-lg"></i> Catat Pembelian Baru
+      </a>
+      <a href="/products/add" class="btn btn-secondary w-full">
+        <i class="bi bi-box-seam"></i> Tambah Furnitur Baru
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Section -->
+<div class="dashboard-layout" style="margin-top: var(--space-4);">
+  <!-- Line Chart Card -->
+  <div class="card card-light">
+    <div class="card-header-flex">
+      <h3><i class="bi bi-graph-up-arrow" style="margin-right: 8px;"></i> Tren Penjualan Mingguan</h3>
+      <span class="text-muted" style="font-size: 11px;"><i class="bi bi-calendar3"></i> Real-time</span>
+    </div>
+    <div style="position: relative; height: 260px; width: 100%; padding-top: var(--space-2);">
+      <canvas id="salesChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Donut Chart Card -->
+  <div class="card card-light">
+    <div class="card-header-flex">
+      <h3><i class="bi bi-pie-chart-fill" style="margin-right: 8px;"></i> Distribusi Kategori</h3>
+      <span class="text-muted" style="font-size: 11px;">Stok Katalog</span>
+    </div>
+    <div style="position: relative; height: 260px; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+      <div style="height: 180px; width: 180px; position: relative;">
+        <canvas id="categoryChart"></canvas>
+      </div>
+      <!-- Custom Legend -->
+      <div class="d-flex justify-between w-full mt-4" id="customLegend" style="flex-wrap: wrap; gap: 8px; font-size: 10px; font-weight: 600; text-transform: uppercase;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard Layout (2 Columns) -->
+<div class="dashboard-layout">
+  <!-- Left Side: Last 5 Transactions -->
+  <div class="card card-light">
+    <div class="card-header-flex">
+      <h3>5 Transaksi Pembelian Terakhir</h3>
+      <a href="/purchases" class="btn btn-secondary btn-sm">
+        Lihat Semua <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+
+    <% if (lastTransactions.length === 0) { %>
+      <div style="text-align: center; padding: var(--space-10) 0;" class="text-muted">
+        <i class="bi bi-receipt-cutoff" style="font-size: 40px; display: block; margin-bottom: var(--space-4);"></i>
+        Belum ada transaksi pembelian yang tercatat.
+      </div>
+    <% } else { %>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Produk / Kategori</th>
+              <th>Kuantitas</th>
+              <th>Total Harga</th>
+              <th>Tanggal</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% lastTransactions.forEach(tx => { %>
+              <tr>
+                <td class="font-semibold">#<%= tx.id %></td>
+                <td>
+                  <div class="font-semibold"><%= tx.product_name %></div>
+                  <span class="text-muted" style="font-size: 11px;"><%= tx.product_category %></span>
+                </td>
+                <td><%= tx.quantity %> unit</td>
+                <td class="font-semibold"><%= formatRupiah(tx.total_price) %></td>
+                <td><%= formatDate(tx.purchased_at) %></td>
+                <td>
+                  <% if (tx.status === 'active') { %>
+                    <span class="status-badge status-active">
+                      <i class="bi bi-check-circle-fill"></i> Aktif
+                    </span>
+                  <% } else { %>
+                    <span class="status-badge status-cancel">
+                      <i class="bi bi-x-circle-fill"></i> Batal
+                    </span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Right Side: Low Stock Warnings -->
+  <div class="card card-light" style="height: fit-content;">
+    <div class="card-header-flex">
+      <h3 style="color: #DC2626; display: flex; align-items: center; gap: 8px;">
+        <i class="bi bi-exclamation-triangle-fill"></i> Peringatan Stok
+      </h3>
+    </div>
+
+    <% if (lowStockProducts.length === 0) { %>
+      <div style="text-align: center; padding: var(--space-6) 0; color: #16A34A;" class="font-semibold">
+        <i class="bi bi-shield-check-fill" style="font-size: 24px; vertical-align: middle; margin-right: 8px;"></i>
+        Semua stok produk aman (di atas 5 unit).
+      </div>
+    <% } else { %>
+      <p class="text-muted" style="font-size: 12px; margin-bottom: var(--space-4);">Segera lakukan restock untuk produk-produk di bawah ini:</p>
+      <div class="d-flex flex-column gap-2">
+        <% lowStockProducts.forEach(prod => { %>
+          <div class="d-flex align-center justify-between" style="padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background-color: #FEF2F2; border-left: 3px solid #DC2626;">
+            <div>
+              <div class="font-semibold" style="font-size: 13px; color: var(--text-primary);"><%= prod.name %></div>
+              <span class="text-muted" style="font-size: 11px;"><%= prod.category %></span>
+            </div>
+            <span class="status-badge status-cancel font-semibold" style="font-size: 11px;">
+              Stok: <%= prod.quantity %>
+            </span>
+          </div>
+        <% }) %>
+      </div>
+      <a href="/products" class="btn btn-secondary btn-sm mt-4 w-full">
+        <i class="bi bi-box-arrow-in-down"></i> Restock Produk Sekarang
+      </a>
+    <% } %>
+  </div>
+</div>
+
+<!-- Charts Rendering Script -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // ----------------------------
+    // 1. Sales Trend Line Chart (7 Days)
+    // ----------------------------
+    const dailySalesData = <%- JSON.stringify(dailySales) %>;
+    
+    // Default premium mock data if no sales are active yet
+    let salesLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+    let salesValues = [1200000, 1900000, 3000000, 5000000, 2300000, 3400000, 4800000];
+    
+    if (dailySalesData && dailySalesData.length > 0) {
+      salesLabels = dailySalesData.map(item => item.label);
+      salesValues = dailySalesData.map(item => item.value);
+    }
+
+    const ctxSales = document.getElementById('salesChart').getContext('2d');
+    
+    // Create elegant linear gradient area fill
+    const gradient = ctxSales.createLinearGradient(0, 0, 0, 220);
+    gradient.addColorStop(0, 'rgba(17, 17, 17, 0.08)');
+    gradient.addColorStop(1, 'rgba(17, 17, 17, 0.00)');
+
+    new Chart(ctxSales, {
+      type: 'line',
+      data: {
+        labels: salesLabels,
+        datasets: [{
+          data: salesValues,
+          borderColor: '#111111',
+          borderWidth: 2.5,
+          pointBackgroundColor: '#111111',
+          pointBorderColor: '#FFFFFF',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          tension: 0.4,
+          fill: true,
+          backgroundColor: gradient
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#111111',
+            titleFont: { family: 'Inter', size: 12, weight: '600' },
+            bodyFont: { family: 'Inter', size: 12 },
+            padding: 10,
+            cornerRadius: 8,
+            displayColors: false,
+            callbacks: {
+              label: function(context) {
+                let value = context.parsed.y;
+                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { font: { family: 'Inter', size: 11, weight: '500' }, color: '#8E8E93' }
+          },
+          y: {
+            grid: { color: '#F2F2F7' },
+            border: { display: false },
+            ticks: {
+              font: { family: 'Inter', size: 10 },
+              color: '#8E8E93',
+              callback: function(value) {
+                if (value >= 1000000) return (value / 1000000) + 'M';
+                if (value >= 1000) return (value / 1000) + 'K';
+                return value;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // ----------------------------
+    // 2. Category Distribution Donut Chart
+    // ----------------------------
+    const categoryData = <%- JSON.stringify(categoryDistribution) %>;
+    const categoryLabels = categoryData.map(item => item.category);
+    const categoryCounts = categoryData.map(item => item.count);
+
+    // Premium neutral grayscale palette matching Xionco aesthetic
+    const palette = ['#111111', '#4A4A4A', '#7A7A7A', '#AAAAAA', '#D1D1D6', '#E5E5EA'];
+    const colors = categoryLabels.map((_, i) => palette[i % palette.length]);
+
+    const ctxCat = document.getElementById('categoryChart').getContext('2d');
+    new Chart(ctxCat, {
+      type: 'doughnut',
+      data: {
+        labels: categoryLabels,
+        datasets: [{
+          data: categoryCounts,
+          backgroundColor: colors,
+          hoverOffset: 6,
+          borderWidth: 2,
+          borderColor: '#FFFFFF'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '74%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#111111',
+            bodyFont: { family: 'Inter', size: 12, weight: '500' },
+            padding: 8,
+            cornerRadius: 8,
+            displayColors: false,
+            callbacks: {
+              label: function(context) {
+                return ` ${context.label}: ${context.raw} produk`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Draw custom premium legend below doughnut chart
+    const legendContainer = document.getElementById('customLegend');
+    categoryLabels.forEach((label, index) => {
+      const col = colors[index];
+      const count = categoryCounts[index];
+      
+      const item = document.createElement('div');
+      item.className = 'd-flex align-center gap-2';
+      item.style.padding = '2px 4px';
+      item.innerHTML = `
+        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background-color:${col};"></span>
+        <span style="color: var(--text-secondary);">${label} (${count})</span>
+      `;
+      legendContainer.appendChild(item);
+    });
+  });
+</script>

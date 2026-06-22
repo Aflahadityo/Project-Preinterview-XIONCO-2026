@@ -1,0 +1,39 @@
+<div class="card card-light" style="max-width: 600px; margin: 0 auto;">
+  <div class="card-header-flex">
+    <h3>Tambah Produk Baru</h3>
+    <a href="/products" class="btn btn-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i> Kembali
+    </a>
+  </div>
+
+  <form action="/products/add" method="POST">
+    <div class="form-group">
+      <label for="name" class="form-label">Nama Produk</label>
+      <input type="text" id="name" name="name" class="form-input" placeholder="Masukkan nama produk..." required>
+    </div>
+
+    <div class="form-group">
+      <label for="category" class="form-label">Kategori</label>
+      <select id="category" name="category" class="form-select" required>
+        <option value="" disabled selected>-- Pilih Kategori --</option>
+        <% categories.forEach(cat => { %>
+          <option value="<%= cat.name %>"><%= cat.name %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="price" class="form-label">Harga Jual Satuan (Rp)</label>
+      <input type="number" id="price" name="price" min="1" class="form-input" placeholder="Contoh: 15000" required>
+    </div>
+
+    <div class="form-group">
+      <label for="initial_stock" class="form-label">Stok Awal</label>
+      <input type="number" id="initial_stock" name="initial_stock" min="0" value="20" class="form-input" placeholder="Masukkan kuantitas stok..." required>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-full mt-4" style="height: 45px;">
+      <i class="bi bi-plus-circle-fill"></i> Simpan Produk & Set Stok
+    </button>
+  </form>
+</div>

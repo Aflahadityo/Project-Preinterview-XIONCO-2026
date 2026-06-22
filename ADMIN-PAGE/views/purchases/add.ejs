@@ -1,0 +1,119 @@
+<div class="card card-light" style="max-width: 600px; margin: 0 auto;">
+  <div class="card-header-flex">
+    <h3>Catat Pembelian Baru</h3>
+    <a href="/purchases" class="btn btn-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i> Kembali
+    </a>
+  </div>
+
+  <form action="/purchases/add" method="POST" id="purchaseForm">
+    <!-- Product Select -->
+    <div class="form-group">
+      <label for="product_id" class="form-label">Pilih Produk</label>
+      <select id="product_id" name="product_id" class="form-select" required>
+        <option value="" disabled selected>-- Pilih Produk --</option>
+        <% products.forEach(prod => { %>
+          <option value="<%= prod.id %>" data-price="<%= prod.price %>" data-stock="<%= prod.stock %>" <%= selectedProductId == prod.id ? 'selected' : '' %>>
+            <%= prod.name %> (Stok: <%= prod.stock %> | <%= formatRupiah(prod.price) %>)
+          </option>
+        <% }) %>
+      </select>
+    </div>
+
+    <!-- Quantity Input -->
+    <div class="form-group">
+      <label for="quantity" class="form-label">Jumlah Pembelian (Qty)</label>
+      <input type="number" id="quantity" name="quantity" min="1" value="<%= selectedQty || 1 %>" class="form-input" placeholder="Masukkan jumlah unit..." required>
+      <div id="stockWarning" class="text-muted" style="font-size: 11px; margin-top: 4px; display: none; color: #DC2626 !important;">
+        <i class="bi bi-exclamation-circle-fill"></i> Kuantitas melebihi stok yang tersedia!
+      </div>
+    </div>
+
+    <!-- Notes Input -->
+    <div class="form-group">
+      <label for="notes" class="form-label">Catatan Transaksi (Opsional)</label>
+      <textarea id="notes" name="notes" class="form-textarea" placeholder="Contoh: Pembelian untuk Restoran A atau Nama Pembeli..."></textarea>
+    </div>
+
+    <!-- Live Preview Pricing Card -->
+    <div class="card card-light" style="background-color: #FAFAFA; border: 1.5px dashed var(--accent-border); margin-bottom: var(--space-4); padding: var(--space-4);">
+      <div class="d-flex justify-between align-center" style="margin-bottom: var(--space-2);">
+        <span class="text-muted" style="font-size: 13px;">Harga Satuan:</span>
+        <span id="previewUnitPrice" class="font-semibold" style="font-size: 13px;">-</span>
+      </div>
+      <div class="d-flex justify-between align-center" style="margin-bottom: var(--space-2); padding-bottom: var(--space-2); border-bottom: 1px solid var(--accent-border);">
+        <span class="text-muted" style="font-size: 13px;">Kuantitas:</span>
+        <span id="previewQty" class="font-semibold" style="font-size: 13px;">0 unit</span>
+      </div>
+      <div class="d-flex justify-between align-center">
+        <span class="font-semibold" style="font-size: 14px; color: var(--text-primary);">Total Pembayaran:</span>
+        <span id="previewTotalPrice" class="font-semibold" style="font-size: 18px; color: var(--text-primary);">-</span>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-full mt-2" style="height: 45px;" id="submitBtn">
+      <i class="bi bi-cart-plus-fill"></i> Simpan Transaksi Pembelian
+    </button>
+  </form>
+</div>
+
+<!-- JavaScript for Live Preview and Stock Check -->
+<script>
+  const productSelect = document.getElementById('product_id');
+  const quantityInput = document.getElementById('quantity');
+  const previewUnitPrice = document.getElementById('previewUnitPrice');
+  const previewQty = document.getElementById('previewQty');
+  const previewTotalPrice = document.getElementById('previewTotalPrice');
+  const stockWarning = document.getElementById('stockWarning');
+  const submitBtn = document.getElementById('submitBtn');
+
+  function formatRupiah(amount) {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0
+    }).format(amount);
+  }
+
+  function updatePricing() {
+    const selectedOption = productSelect.options[productSelect.selectedIndex];
+    
+    if (!selectedOption || selectedOption.value === '') {
+      previewUnitPrice.textContent = '-';
+      previewQty.textContent = '0 unit';
+      previewTotalPrice.textContent = '-';
+      stockWarning.style.display = 'none';
+      return;
+    }
+
+    const price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+    const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
+    const qty = parseInt(quantityInput.value) || 0;
+
+    previewUnitPrice.textContent = formatRupiah(price);
+    previewQty.textContent = qty + ' unit';
+    
+    const total = price * qty;
+    previewTotalPrice.textContent = formatRupiah(total);
+
+    // Stock check validation (real-time UX)
+    if (qty > stock) {
+      stockWarning.style.display = 'block';
+      stockWarning.textContent = `⚠️ Jumlah pembelian (${qty}) melebihi stok yang tersedia (${stock})!`;
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.5';
+      submitBtn.style.cursor = 'not-allowed';
+    } else {
+      stockWarning.style.display = 'none';
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '1';
+      submitBtn.style.cursor = 'pointer';
+    }
+  }
+
+  productSelect.addEventListener('change', updatePricing);
+  quantityInput.addEventListener('input', updatePricing);
+
+  // Initialize on page load in case values are pre-selected
+  updatePricing();
+</script>

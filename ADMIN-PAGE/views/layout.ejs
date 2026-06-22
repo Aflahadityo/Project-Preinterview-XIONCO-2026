@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XIONCO — Dashboard Admin</title>
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  
+  <!-- Base CSS -->
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Sidebar Backdrop (for mobile overlay) -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo" style="margin-bottom: var(--space-8); display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <span style="font-weight: 800; font-size: 20px; letter-spacing: 1.5px; color: var(--accent-black); font-family: var(--font-base); text-decoration: none;">XIONCO</span>
+        <span style="font-weight: 600; font-size: 9px; color: var(--text-muted); border: 1px solid var(--accent-border); padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1;">Admin</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/" class="nav-item <%= path === '/' ? 'active' : '' %>">
+          <i class="bi bi-grid-1x2"></i>
+          <span>Dashboard</span>
+        </a>
+        
+        <div class="sidebar-section-label">Manajemen Katalog</div>
+        
+        <a href="/products" class="nav-item <%= path.startsWith('/products') ? 'active' : '' %>">
+          <i class="bi bi-box-seam"></i>
+          <span>Produk & Stok</span>
+        </a>
+
+        <a href="/categories" class="nav-item <%= path.startsWith('/categories') ? 'active' : '' %>">
+          <i class="bi bi-tag"></i>
+          <span>Kategori Produk</span>
+        </a>
+        
+        <a href="/purchases" class="nav-item <%= path.startsWith('/purchases') ? 'active' : '' %>">
+          <i class="bi bi-receipt"></i>
+          <span>Transaksi Pembelian</span>
+        </a>
+
+        <a href="/assistant" class="nav-item <%= path.startsWith('/assistant') ? 'active' : '' %>">
+          <i class="bi bi-robot"></i>
+          <span>AI Assistant</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer" style="display: flex; flex-direction: column; gap: var(--space-2);">
+        <div class="d-flex align-center gap-2" style="font-size: 13px; color: var(--text-secondary);">
+          <div class="avatar" style="width: 28px; height: 28px; font-size: 11px;">AA</div>
+          <div class="d-flex flex-column" style="flex-grow: 1;">
+            <span class="font-semibold" style="line-height: 1.2;">Aflah Adityo</span>
+            <span class="text-muted" style="font-size: 11px; line-height: 1.2;">Admin XIONCO</span>
+          </div>
+        </div>
+        <a href="/logout" class="btn btn-secondary btn-sm w-full mt-2" style="border-color: rgba(239, 68, 68, 0.15); font-size: 11px; color: var(--status-cancel); background-color: var(--status-cancel-bg); display: flex; align-items: center; justify-content: center; gap: var(--space-2); height: 32px;">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle" id="menuToggleBtn">
+            <i class="bi bi-list"></i>
+          </button>
+          <div class="page-title">
+            <% if (path === '/') { %>
+              XIONCO Dashboard
+            <% } else if (path.startsWith('/products/add')) { %>
+              Tambah Produk Furnitur
+            <% } else if (path.startsWith('/products')) { %>
+              Katalog Furnitur & Inventaris
+            <% } else if (path.startsWith('/purchases/add')) { %>
+              Catat Pembelian Furnitur
+            <% } else if (path.startsWith('/purchases')) { %>
+              Daftar Transaksi Pembelian
+            <% } else if (path.startsWith('/categories')) { %>
+              Manajemen Kategori Produk
+            <% } else if (path.startsWith('/assistant')) { %>
+              AI Assistant
+            <% } else { %>
+              XIONCO Admin Panel
+            <% } %>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="btn-icon">
+            <i class="bi bi-search"></i>
+          </button>
+          <button class="btn-icon">
+            <i class="bi bi-bell"></i>
+          </button>
+          <div class="avatar">
+            AA
+          </div>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <%- body %>
+      </div>
+    </main>
+  </div>
+
+  <!-- Mobile Sidebar Logic -->
+  <script>
+    const menuToggleBtn = document.getElementById('menuToggleBtn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+    function toggleSidebar() {
+      sidebar.classList.toggle('show');
+      sidebarBackdrop.classList.toggle('show');
+    }
+
+    if (menuToggleBtn) {
+      menuToggleBtn.addEventListener('click', toggleSidebar);
+    }
+    if (sidebarBackdrop) {
+      sidebarBackdrop.addEventListener('click', toggleSidebar);
+    }
+  </script>
+
+  <!-- SweetAlert2 Library & Global Handler -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const successMsg = urlParams.get('success');
+      const errorMsg = urlParams.get('error');
+
+      // Custom clean monochrome styling for SweetAlert
+      const customSwalClass = {
+        popup: 'card card-light animate-fade-in',
+        confirmButton: 'btn btn-primary'
+      };
+
+      if (successMsg) {
+        Swal.fire({
+          icon: 'success',
+          title: 'BERHASIL',
+          text: successMsg,
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3500,
+          timerProgressBar: true,
+          iconColor: '#10B981',
+          background: '#FFFFFF',
+          color: '#111111',
+          customClass: {
+            popup: 'animate-fade-in'
+          }
+        });
+      }
+
+      if (errorMsg) {
+        Swal.fire({
+          icon: 'error',
+          title: 'PERINGATAN',
+          text: errorMsg,
+          confirmButtonText: 'OK',
+          customClass: {
+            confirmButton: 'btn btn-primary'
+          },
+          buttonsStyling: false,
+          background: '#FFFFFF',
+          color: '#111111',
+          iconColor: '#EF4444'
+        });
+      }
+    });
+  </script>
+</body>
+</html>
