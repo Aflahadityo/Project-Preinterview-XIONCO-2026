@@ -58,10 +58,12 @@
 
       <div class="sidebar-footer" style="display: flex; flex-direction: column; gap: var(--space-2);">
         <div class="d-flex align-center gap-2" style="font-size: 13px; color: var(--text-secondary);">
-          <div class="avatar" style="width: 28px; height: 28px; font-size: 11px;">AA</div>
+          <div class="avatar" style="width: 28px; height: 28px; font-size: 11px;">
+            <%= (username || 'Admin').substring(0, 2).toUpperCase() %>
+          </div>
           <div class="d-flex flex-column" style="flex-grow: 1;">
-            <span class="font-semibold" style="line-height: 1.2;">Aflah Adityo</span>
-            <span class="text-muted" style="font-size: 11px; line-height: 1.2;">Admin XIONCO</span>
+            <span class="font-semibold" style="line-height: 1.2;"><%= username || 'Admin' %></span>
+            <span class="text-muted" style="font-size: 11px; line-height: 1.2;"><%= role === 'super_admin' ? 'Super Admin' : 'Admin' %> XIONCO</span>
           </div>
         </div>
         <a href="/logout" class="btn btn-secondary btn-sm w-full mt-2" style="border-color: rgba(239, 68, 68, 0.15); font-size: 11px; color: var(--status-cancel); background-color: var(--status-cancel-bg); display: flex; align-items: center; justify-content: center; gap: var(--space-2); height: 32px;">
@@ -91,6 +93,8 @@
               Daftar Transaksi Pembelian
             <% } else if (path.startsWith('/categories')) { %>
               Manajemen Kategori Produk
+            <% } else if (path.startsWith('/assistant/settings')) { %>
+              Pengaturan Asisten AI
             <% } else if (path.startsWith('/assistant')) { %>
               AI Assistant
             <% } else { %>

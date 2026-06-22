@@ -89,9 +89,16 @@
       </div>
     </div>
     
-    <button id="clearBtn" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 6px 12px; height: 30px; display: flex; align-items: center; gap: var(--space-1.5);">
-      <i class="bi bi-trash3" style="font-size: 12px;"></i> Hapus Obrolan
-    </button>
+    <div class="d-flex align-center gap-2">
+      <% if (role === 'super_admin') { %>
+        <a href="/assistant/settings" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 6px 12px; height: 30px; display: flex; align-items: center; gap: var(--space-1.5);">
+          <i class="bi bi-gear" style="font-size: 12px;"></i> Pengaturan AI
+        </a>
+      <% } %>
+      <button id="clearBtn" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 6px 12px; height: 30px; display: flex; align-items: center; gap: var(--space-1.5);">
+        <i class="bi bi-trash3" style="font-size: 12px;"></i> Hapus Obrolan
+      </button>
+    </div>
   </div>
 
   <!-- Chat History Scroll Box -->

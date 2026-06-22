@@ -1,36 +1,65 @@
 const axios = require('axios');
+const db = require('../db/database');
 
 // Dynamic helper to resolve the correct/latest model based on provider
-function getModelName(provider) {
-  const envModel = (process.env.AI_MODEL || '').trim().toLowerCase();
+function resolveModelName(provider, model) {
+  const m = (model || '').trim().toLowerCase();
   
   if (provider === 'gemini') {
-    return envModel.startsWith('gemini') ? process.env.AI_MODEL : 'gemini-2.5-flash';
+    return m.startsWith('gemini') ? model : 'gemini-2.5-flash';
   }
   if (provider === 'openai') {
-    return (envModel.startsWith('gpt') || envModel.startsWith('o1') || envModel.startsWith('o3')) ? process.env.AI_MODEL : 'gpt-4o';
+    return (m.startsWith('gpt') || m.startsWith('o1') || m.startsWith('o3')) ? model : 'gpt-4o';
   }
   if (provider === 'claude') {
-    return envModel.startsWith('claude') ? process.env.AI_MODEL : 'claude-3-5-sonnet-latest';
+    return m.startsWith('claude') ? model : 'claude-3-5-sonnet-latest';
   }
   if (provider === 'ollama') {
-    return process.env.AI_MODEL || 'llama3';
+    return model || 'llama3';
   }
-  return process.env.AI_MODEL || '';
+  return model || '';
+}
+
+// Loads AI configurations dynamically from the settings table, falling back to process.env
+async function loadAISettings() {
+  const settings = {
+    provider: process.env.AI_PROVIDER || 'gemini',
+    model: process.env.AI_MODEL || '',
+    geminiKey: process.env.GEMINI_API_KEY || '',
+    openaiKey: process.env.OPENAI_API_KEY || '',
+    claudeKey: process.env.ANTHROPIC_API_KEY || '',
+    systemPrompt: process.env.SYSTEM_PROMPT || 'Kamu adalah asisten AI dari XIONCO yang ramah, sopan, dan profesional. Bantu menjawab pertanyaan pengguna tentang furnitur atau topik umum lainnya dalam Bahasa Indonesia secara ringkas dan informatif.'
+  };
+
+  try {
+    const res = await db.query('SELECT * FROM settings');
+    for (const row of res.rows) {
+      if (row.key === 'ai_provider' && row.value) settings.provider = row.value;
+      if (row.key === 'ai_model' && row.value) settings.model = row.value;
+      if (row.key === 'gemini_api_key' && row.value) settings.geminiKey = row.value;
+      if (row.key === 'openai_api_key' && row.value) settings.openaiKey = row.value;
+      if (row.key === 'anthropic_api_key' && row.value) settings.claudeKey = row.value;
+      if (row.key === 'system_prompt' && row.value) settings.systemPrompt = row.value;
+    }
+  } catch (err) {
+    console.error('Error loading AI settings from DB, using env fallback:', err.message);
+  }
+  return settings;
 }
 
 async function* streamAIResponse(messages) {
-  const provider = process.env.AI_PROVIDER || 'gemini';
+  const config = await loadAISettings();
+  const provider = config.provider;
 
   try {
     if (provider === 'claude') {
-      yield* streamClaude(messages);
+      yield* streamClaude(messages, config);
     } else if (provider === 'openai') {
-      yield* streamOpenAI(messages);
+      yield* streamOpenAI(messages, config);
     } else if (provider === 'gemini') {
-      yield* streamGemini(messages);
+      yield* streamGemini(messages, config);
     } else if (provider === 'ollama') {
-      yield* streamOllama(messages);
+      yield* streamOllama(messages, config);
     } else {
       throw new Error(`Provider AI "${provider}" tidak didukung.`);
     }
@@ -55,25 +84,25 @@ async function* streamAIResponse(messages) {
 }
 
 // --- CLAUDE ---
-async function* streamClaude(messages) {
-  if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'your_anthropic_api_key_here') {
-    throw new Error('ANTHROPIC_API_KEY belum dikonfigurasi di file .env.');
+async function* streamClaude(messages, config) {
+  if (!config.claudeKey || config.claudeKey === 'your_anthropic_api_key_here') {
+    throw new Error('ANTHROPIC_API_KEY belum dikonfigurasi di pengaturan / file .env.');
   }
 
-  const model = getModelName('claude');
+  const model = resolveModelName('claude', config.model);
 
   const res = await axios.post(
     'https://api.anthropic.com/v1/messages',
     {
       model,
       max_tokens: 1024,
-      system: process.env.SYSTEM_PROMPT || 'You are a helpful assistant.',
+      system: config.systemPrompt,
       messages,
       stream: true,
     },
     {
       headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'x-api-key': config.claudeKey,
         'anthropic-version': '2023-06-01',
         'content-type': 'application/json',
       },
@@ -97,23 +126,23 @@ async function* streamClaude(messages) {
 }
 
 // --- OPENAI ---
-async function* streamOpenAI(messages) {
-  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
-    throw new Error('OPENAI_API_KEY belum dikonfigurasi di file .env.');
+async function* streamOpenAI(messages, config) {
+  if (!config.openaiKey || config.openaiKey === 'your_openai_api_key_here') {
+    throw new Error('OPENAI_API_KEY belum dikonfigurasi di pengaturan / file .env.');
   }
 
-  const model = getModelName('openai');
+  const model = resolveModelName('openai', config.model);
 
   const res = await axios.post(
     'https://api.openai.com/v1/chat/completions',
     {
       model,
-      messages: [{ role: 'system', content: process.env.SYSTEM_PROMPT }, ...messages],
+      messages: [{ role: 'system', content: config.systemPrompt }, ...messages],
       stream: true,
     },
     {
       headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${config.openaiKey}`,
         'content-type': 'application/json',
       },
       responseType: 'stream',
@@ -135,22 +164,22 @@ async function* streamOpenAI(messages) {
 }
 
 // --- GEMINI ---
-async function* streamGemini(messages) {
-  if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
-    throw new Error('GEMINI_API_KEY belum dikonfigurasi di file .env.');
+async function* streamGemini(messages, config) {
+  if (!config.geminiKey || config.geminiKey === 'your_gemini_api_key_here') {
+    throw new Error('GEMINI_API_KEY belum dikonfigurasi di pengaturan / file .env.');
   }
 
-  const model = getModelName('gemini');
+  const model = resolveModelName('gemini', config.model);
   const contents = messages.map(m => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }],
   }));
 
   const res = await axios.post(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${process.env.GEMINI_API_KEY}&alt=sse`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${config.geminiKey}&alt=sse`,
     {
       contents,
-      systemInstruction: { parts: [{ text: process.env.SYSTEM_PROMPT }] },
+      systemInstruction: { parts: [{ text: config.systemPrompt }] },
     },
     { responseType: 'stream' }
   );
@@ -170,13 +199,13 @@ async function* streamGemini(messages) {
 }
 
 // --- OLLAMA (local) ---
-async function* streamOllama(messages) {
-  const model = getModelName('ollama');
+async function* streamOllama(messages, config) {
+  const model = resolveModelName('ollama', config.model);
   const res = await axios.post(
     `${process.env.OLLAMA_BASE_URL || 'http://localhost:11434'}/api/chat`,
     {
       model,
-      messages: [{ role: 'system', content: process.env.SYSTEM_PROMPT }, ...messages],
+      messages: [{ role: 'system', content: config.systemPrompt }, ...messages],
       stream: true,
     },
     { responseType: 'stream' }
@@ -193,4 +222,4 @@ async function* streamOllama(messages) {
   }
 }
 
-module.exports = { streamAIResponse };
+module.exports = { streamAIResponse, loadAISettings };

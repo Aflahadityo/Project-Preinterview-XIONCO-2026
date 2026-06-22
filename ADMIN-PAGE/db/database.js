@@ -53,9 +53,21 @@ const initDb = async () => {
       CREATE TABLE IF NOT EXISTS admins (
         id SERIAL PRIMARY KEY,
         username TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL
+        password TEXT NOT NULL,
+        role TEXT DEFAULT 'admin'
+      );
+
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
       );
     `);
+
+    // Migrate existing admins table to add role column if it doesn't exist
+    await client.query(`
+      ALTER TABLE admins ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'admin';
+    `);
+
     console.log('PostgreSQL database tables initialized.');
     client.release();
   } catch (err) {

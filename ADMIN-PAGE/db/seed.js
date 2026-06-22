@@ -21,7 +21,7 @@ const seed = async () => {
     await client.query('BEGIN');
 
     // Clear tables
-    await client.query('TRUNCATE TABLE purchases, product_stocks, products, admins, categories CASCADE');
+    await client.query('TRUNCATE TABLE purchases, product_stocks, products, admins, categories, settings CASCADE');
 
     // Seed default categories
     const categoriesList = ['SEATS', 'TABLE', 'BEDFRAME', 'CABINET', 'DECOR'];
@@ -35,8 +35,9 @@ const seed = async () => {
       await client.query('INSERT INTO product_stocks (product_id, quantity) VALUES ($1, $2)', [prod.id, 10]);
     }
 
-    // Seed default admin account
-    await client.query('INSERT INTO admins (username, password) VALUES ($1, $2)', ['admin', 'admin']);
+    // Seed default admin accounts
+    await client.query('INSERT INTO admins (username, password, role) VALUES ($1, $2, $3)', ['admin', 'admin', 'admin']);
+    await client.query('INSERT INTO admins (username, password, role) VALUES ($1, $2, $3)', ['superadmin', 'superadmin', 'super_admin']);
 
     // Reset sequence counters so next inserts don't conflict
     await client.query("SELECT setval(pg_get_serial_sequence('products', 'id'), COALESCE(MAX(id), 1)) FROM products");

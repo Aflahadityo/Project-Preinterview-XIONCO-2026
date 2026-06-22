@@ -49,9 +49,11 @@ app.locals.formatDate = (dateStr) => {
   });
 };
 
-// Custom helper to expose request path to views for active navigation highlights
+// Custom helper to expose request path and session info to views
 app.use((req, res, next) => {
   res.locals.path = req.path;
+  res.locals.role = req.session ? req.session.role : null;
+  res.locals.username = req.session ? req.session.username : null;
   next();
 });
 
@@ -80,6 +82,8 @@ app.post('/login', async (req, res) => {
     const admin = result.rows[0];
     if (admin) {
       req.session.isAdmin = true;
+      req.session.username = admin.username;
+      req.session.role = admin.role || 'admin';
       return res.redirect('/');
     }
   } catch (err) {
