@@ -1,6 +1,6 @@
-# XIONCO — Unified Admin Panel & AI Assistant
+# XIONCO — Pre-Interview Test for Web Developer & IT Support
 
-Selamat datang di repositori **XIONCO**. Repositori ini berisi dua proyek utama yang dirancang untuk mengelola katalog furnitur, stok inventaris, pencatatan transaksi pembelian, serta asisten AI interaktif untuk membantu administrasi toko.
+Selamat datang di repositori **XIONCO — Pre-Interview Test for Web Developer & IT Support**. Repositori ini berisi dua proyek utama yang dirancang untuk mengelola katalog furnitur, stok inventaris, pencatatan transaksi pembelian, serta asisten AI interaktif untuk membantu administrasi toko.
 
 ---
 
