@@ -28,6 +28,11 @@ Sistem Dashboard Admin XIONCO adalah portal manajemen katalog produk furnitur, s
 6. **Transaksi Pembelian & Pembatalan Aman**:
    - Sistem transaksi pembelian baru dilengkapi dengan visualisasi harga total secara live dan validasi stok di sisi klien.
    - Pembatalan transaksi menggunakan **SweetAlert2 Confirmation Dialog** dengan pemulihan kuantitas stok otomatis ke inventaris berbasis transaksi aman (`BEGIN/COMMIT/ROLLBACK`).
+7. **AI Assistant - Chatbot Cek Stok Real-Time**:
+   - Chatbot built-in yang bisa mengecek stok produk langsung dari database **tanpa memerlukan API key AI eksternal**.
+   - Mendukung berbagai jenis query: ringkasan stok, stok habis, stok rendah, filter kategori, dan pencarian produk.
+   - Integrasi dengan AI provider eksternal (Gemini, OpenAI, Claude, Ollama) untuk pertanyaan umum selain stok.
+   - Mode demo berjalan dengan in-memory database tanpa perlu konfigurasi PostgreSQL.
 
 ---
 
@@ -85,58 +90,107 @@ Untuk login pertama kali, gunakan akun default berikut:
 
 ---
 
-## 🚀 Panduan Deployment ke Vercel
+## 🤖 AI Assistant - Chatbot Cek Stok
 
-Aplikasi dashboard admin ini sudah dikonfigurasi untuk dapat dideploy ke **Vercel** sebagai Serverless Function menggunakan file konfigurasi [vercel.json](vercel.json).
+Aplikasi ini dilengkapi dengan chatbot AI yang dapat mengecek stok produk langsung dari database.
 
-### 1. Persiapan Database Production
-Karena Vercel tidak mendukung database lokal persisten:
-1. Buat database PostgreSQL di cloud provider seperti **Supabase**, Neon, atau render.com.
-2. Salin seluruh isi dari berkas [db/schema.sql](db/schema.sql) dan jalankan di SQL Editor dashboard database cloud Anda.
-3. Lakukan seeding data awal ke database production dengan mengubah sementara `DATABASE_URL` di file `.env` lokal Anda ke database cloud, kemudian jalankan:
-   ```bash
-   npm run seed
-   ```
+### Fitur Utama
+- **Cek Stok Tanpa API Key**: Query stok berjalan lokal tanpa memerlukan API key AI eksternal
+- **Query Cerdas**: Mendeteksi otomatis pertanyaan tentang stok menggunakan keyword
+- **Respons Terformat**: Menampilkan data stok dengan emoji status (🟢 TERSEDIA, 🟡 RENDAH, 🔴 HABIS)
+- **Mode Demo**: Berjalan dengan in-memory database untuk testing
 
-### 2. Push Code ke GitHub
-1. Pastikan Anda menginisiasi git di root project workspace:
-   ```bash
-   git init
-   git add .
-   git commit -m "Setup: Vercel deployment & AI integration"
-   ```
-2. Buat repositori baru di GitHub dan lakukan push.
+### Contoh Query yang Didukung
+```
+"Ringkasan stok produk"        → Menampilkan semua produk dan stok
+"Stok habis"                   → Filter produk dengan stok 0
+"Stok rendah"                  → Filter produk dengan stok < 5 unit
+"Produk kategori SEATS"        → Stok berdasarkan kategori
+"Cek stok kursi"               → Pencarian berdasarkan nama produk
+```
 
-### 3. Deploy ke Vercel
-1. Masuk ke dashboard [Vercel](https://vercel.com) dan hubungkan akun GitHub Anda.
-2. Klik **Add New Project**, pilih repositori yang telah di-push.
-3. Pada halaman konfigurasi, sesuaikan parameter berikut:
-   - **Root Directory**: Ubah ke `ADMIN-PAGE` (karena workspace kita berisi subfolder).
-   - **Framework Preset**: Pilih `Other`.
-4. Buka tab **Environment Variables** dan masukkan variabel lingkungan berikut:
-   - `DATABASE_URL` = (Tautan koneksi PostgreSQL Supabase/Neon Anda)
-   - `GEMINI_API_KEY` = (API Key Google Gemini Anda)
-   - `AI_PROVIDER` = `gemini`
-   - `AI_MODEL` = `gemini-2.5-flash`
-   - `SYSTEM_PROMPT` = `Kamu adalah asisten AI dari XIONCO...` (sesuaikan dengan prompt Anda)
-   - `NODE_ENV` = `production`
-5. Klik **Deploy** dan tunggu proses build selesai.
+### Konfigurasi AI Eksternal (Opsional)
+Untuk pertanyaan non-stok, Anda dapat mengkonfigurasi AI provider:
+1. Login sebagai **superadmin** (username: `superadmin`, password: `superadmin`)
+2. Buka menu **Pengaturan** di halaman Assistant
+3. Pilih provider (Gemini/OpenAI/Claude/Ollama) dan masukkan API key
 
-### ⚠️ Catatan Penting Mengenai Sesi (Session) di Vercel
-Secara default, aplikasi ini menggunakan penyimpanan sesi berbasis memori (`MemoryStore` bawaan dari `express-session`). Karena Vercel menggunakan Serverless Functions yang bersifat *stateless* (kontainer dapat mati, hidup, dan berskala secara dinamis):
-- Sesi login admin dapat ter-reset atau logout sendiri secara berkala jika kontainer serverless di-restart oleh Vercel.
-- **Rekomendasi untuk Production**: Gunakan database-backed session store seperti `connect-pg-simple` agar data sesi admin tersimpan aman di tabel PostgreSQL Anda:
-  1. Install package: `npm install connect-pg-simple`
-  2. Buat tabel sesi di database PostgreSQL Anda menggunakan SQL:
-     ```sql
-     CREATE TABLE "session" (
-       "sid" varchar NOT NULL COLLATE "default",
-       "sess" json NOT NULL,
-       "expire" timestamp(6) NOT NULL
-     )
-     WITH (OIDS=FALSE);
-     ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
-     CREATE INDEX "IDX_session_expire" ON "session" ("expire");
-     ```
-  3. Konfigurasi `session` di `app.js` Anda agar menggunakan store baru tersebut.
+---
+
+## 🗄️ Database Schema
+
+### Struktur Tabel
+
+**categories** - Kategori produk
+- `id` - SERIAL PRIMARY KEY
+- `name` - TEXT UNIQUE (SEATS, TABLE, BEDFRAME, CABINET, DECOR)
+- `created_at` - TIMESTAMP
+
+**products** - Data produk furnitur
+- `id` - SERIAL PRIMARY KEY
+- `name` - TEXT
+- `category` - TEXT (Foreign Key ke categories)
+- `price` - DOUBLE PRECISION (Harga dalam Rupiah)
+- `created_at` - TIMESTAMP
+
+**product_stocks** - Stok/inventaris produk
+- `id` - SERIAL PRIMARY KEY
+- `product_id` - INTEGER UNIQUE (Foreign Key ke products)
+- `quantity` - INTEGER (Jumlah stok)
+- `updated_at` - TIMESTAMP
+
+**purchases** - Transaksi pembelian
+- `id` - SERIAL PRIMARY KEY
+- `product_id` - INTEGER (Foreign Key ke products)
+- `quantity` - INTEGER
+- `total_price` - DOUBLE PRECISION
+- `status` - TEXT ('active' atau 'cancelled')
+- `notes` - TEXT
+- `purchased_at` - TIMESTAMP
+- `cancelled_at` - TIMESTAMP
+
+**admins** - Akun administrator
+- `id` - SERIAL PRIMARY KEY
+- `username` - TEXT UNIQUE
+- `password` - TEXT
+- `role` - TEXT ('admin' atau 'super_admin')
+
+**settings** - Pengaturan aplikasi
+- `key` - TEXT PRIMARY KEY
+- `value` - TEXT
+
+---
+
+## 📡 API Endpoints
+
+### Public Routes
+- `GET /login` - Halaman login
+- `POST /login` - Proses autentikasi
+- `GET /logout` - Logout
+
+### Protected Routes (Memerlukan Login)
+- `GET /` - Dashboard utama
+- `GET /products` - Daftar produk
+- `GET /products/add` - Form tambah produk
+- `POST /products/add` - Proses tambah produk
+- `POST /products/:id/restock` - Restok produk
+- `GET /categories` - Daftar kategori
+- `POST /categories/add` - Tambah kategori
+- `GET /purchases` - Daftar pembelian
+- `GET /purchases/add` - Form tambah pembelian
+- `POST /purchases/add` - Proses tambah pembelian
+- `POST /purchases/:id/cancel` - Batalkan pembelian
+
+### AI Assistant Routes
+- `GET /assistant` - Halaman chatbot
+- `POST /assistant/chat` - Kirim pesan ke chatbot
+- `POST /assistant/clear` - Hapus riwayat chat
+- `GET /assistant/settings` - Pengaturan AI (Super Admin only)
+- `POST /assistant/settings` - Simpan pengaturan AI (Super Admin only)
+
+---
+
+## 📄 License
+
+ISC
 

@@ -35,7 +35,7 @@ Workspace ini terbagi menjadi dua sub-direktori utama:
 
 Masing-masing proyek memiliki konfigurasi `.env` sendiri. Salin `.env.example` ke `.env` di masing-masing sub-folder.
 
-### Konfigurasi [ADMIN-PAGE/.env](file:///d:/Project-Preinterview-XIONCO%202026/ADMIN-PAGE/.env):
+### Konfigurasi [ADMIN-PAGE/.env]:
 ```env
 # Database (Kosongkan jika ingin masuk ke In-Memory Demo Mode)
 DATABASE_URL=postgresql://postgres:password@host:port/postgres
@@ -48,7 +48,7 @@ GEMINI_API_KEY=your_gemini_api_key_here
 SYSTEM_PROMPT=Kamu adalah asisten AI dari XIONCO...
 ```
 
-### Konfigurasi [CHATBOT-AI/.env](file:///d:/Project-Preinterview-XIONCO%202026/CHATBOT-AI/.env):
+### Konfigurasi [CHATBOT-AI/.env]:
 ```env
 PORT=3001
 AI_PROVIDER=gemini
@@ -78,7 +78,7 @@ SYSTEM_PROMPT=Kamu adalah asisten AI dari XIONCO...
    ```bash
    npm run dev
    ```
-   Buka browser pada alamat [http://localhost:3000](http://localhost:3000).
+   Buka browser pada alamat [http://localhost:3000].
 
 ### 2. Jalankan Sandbox Chatbot Mandiri (`CHATBOT-AI` - Port 3001)
 1. Pindah ke direktori `CHATBOT-AI`:
@@ -93,28 +93,6 @@ SYSTEM_PROMPT=Kamu adalah asisten AI dari XIONCO...
    ```bash
    npm run dev
    ```
-   Buka browser pada alamat [http://localhost:3001](http://localhost:3001).
+   Buka browser pada alamat [http://localhost:3001].
 
----
 
-## 🚀 Panduan Deployment ke Vercel
-
-Deployment ke Vercel dikonfigurasi menggunakan **Vercel Zero Config** melalui file [ADMIN-PAGE/vercel.json](file:///d:/Project-Preinterview-XIONCO%202026/ADMIN-PAGE/vercel.json).
-
-### Langkah-langkah Deploy:
-1. Hubungkan repositori GitHub Anda ke akun **Vercel**.
-2. Buat proyek baru di Vercel dan pilih repositori workspace ini.
-3. Sesuaikan parameter konfigurasi Vercel berikut:
-   * **Root Directory**: Ubah menjadi **`ADMIN-PAGE`** (karena kita hanya men-deploy sistem admin portal yang telah menyatu dengan AI).
-   * **Framework Preset**: Pilih **`Other`**.
-4. Di bagian **Environment Variables**, tambahkan:
-   * `NODE_ENV` = `production`
-   * `GEMINI_API_KEY` = *(API Key Google Gemini Anda)*
-   * `AI_PROVIDER` = `gemini`
-   * `AI_MODEL` = `gemini-2.5-flash`
-   * `SYSTEM_PROMPT` = *(Instruksi prompt sistem)*
-   * `DATABASE_URL` = *(Kosongkan jika ingin menggunakan mode in-memory demo, atau isi dengan tautan PostgreSQL cloud Supabase/Neon Anda)*
-5. Klik **Deploy**.
-
-> [!TIP]
-> **Sesi Login di Vercel**: Karena Vercel menggunakan Serverless Functions yang bersifat *stateless*, user admin mungkin akan logout secara acak jika menggunakan memori bawaan. Di lingkungan production, disarankan untuk mengonfigurasi penyimpanan sesi berbasis database (`connect-pg-simple`) menggunakan database PostgreSQL yang sama. Langkah instalasinya dapat dilihat pada berkas [ADMIN-PAGE/README.md](file:///d:/Project-Preinterview-XIONCO%202026/ADMIN-PAGE/README.md).

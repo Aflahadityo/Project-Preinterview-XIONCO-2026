@@ -4,34 +4,60 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XIONCO — AI Assistant</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
+
   <!-- Fonts & Icons -->
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-  
+
   <!-- Marked.js for Markdown Rendering -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
+    :root {
+      --accent-black: #111111;
+      --text-primary: #1F1F1F;
+      --text-secondary: #4B4B4B;
+      --text-muted: #9CA3AF;
+      --accent-border: #E5E7EB;
+      --bg-light: #FAFAFB;
+      --bg-white: #FFFFFF;
+      --status-cancel: #EF4444;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-6: 1.5rem;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-primary);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
     /* Custom Scrollbar */
     .custom-scrollbar::-webkit-scrollbar {
       width: 6px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
-      background: rgba(30, 41, 59, 0.5);
+      background: #F3F4F6;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(148, 163, 184, 0.3);
+      background: #D1D5DB;
       border-radius: 4px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: rgba(148, 163, 184, 0.5);
+      background: #9CA3AF;
     }
     /* Markdown overrides inside AI bubbles */
     .prose-ai p {
@@ -41,23 +67,28 @@
       margin-bottom: 0;
     }
     .prose-ai code {
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(15, 23, 42, 0.08);
       padding: 2px 6px;
       border-radius: 4px;
       font-family: monospace;
       font-size: 0.9em;
+      color: #EF4444;
     }
     .prose-ai pre {
-      background: rgba(15, 23, 42, 0.8);
-      padding: 12px;
+      background: #1E1E24;
+      color: #F8F8F2;
+      padding: 12px 16px;
       border-radius: 8px;
-      margin: 8px 0;
+      margin: 10px 0;
       overflow-x: auto;
+      font-family: monospace;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
     }
     .prose-ai pre code {
       background: transparent;
       padding: 0;
       font-size: 0.85em;
+      color: inherit;
     }
     .prose-ai ul, .prose-ai ol {
       margin-left: 20px;
@@ -74,7 +105,7 @@
     @keyframes fadeInUp {
       from {
         opacity: 0;
-        transform: translateY(12px);
+        transform: translateY(10px);
       }
       to {
         opacity: 1;
@@ -82,10 +113,15 @@
       }
     }
     .bubble-anim {
-      animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     /* Typing Dots Animation */
     .typing-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--text-muted);
       animation: bounce 1.4s infinite ease-in-out both;
     }
     .typing-dot:nth-child(1) { animation-delay: -0.32s; }
@@ -94,39 +130,83 @@
       0%, 80%, 100% { transform: scale(0); }
       40% { transform: scale(1.0); }
     }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      background-color: var(--accent-black);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid var(--accent-border);
+      background-color: var(--bg-white);
+      color: var(--text-secondary);
+    }
+
+    .btn:hover {
+      background-color: var(--bg-light);
+      border-color: var(--accent-black);
+      color: var(--accent-black);
+    }
+
+    .btn-primary {
+      background-color: var(--accent-black);
+      color: white;
+      border-color: var(--accent-black);
+    }
+
+    .btn-primary:hover {
+      background-color: #2F2F2F;
+      border-color: #2F2F2F;
+    }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 h-screen flex flex-col overflow-hidden">
+<body>
 
   <!-- Header Bar -->
-  <header class="bg-slate-900/60 backdrop-blur-md border-b border-slate-800/80 px-6 py-4 flex justify-between items-center z-10 shrink-0">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-        <i class="bi bi-robot text-xl text-white"></i>
+  <header style="background-color: var(--bg-white); border-bottom: 1px solid var(--accent-border); padding: var(--space-4) var(--space-6); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+    <div style="display: flex; align-items: center; gap: var(--space-3);">
+      <div class="avatar">
+        <i class="bi bi-robot" style="font-size: 18px;"></i>
       </div>
       <div>
-        <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
+        <h1 style="font-size: 14px; font-weight: 600; line-height: 1.2; color: var(--text-primary); display: flex; align-items: center; gap: var(--space-2);">
           XIONCO AI Assistant
-          <span class="text-[9px] font-semibold tracking-wider text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-full uppercase">
+          <span style="font-size: 9px; font-weight: 600; letter-spacing: 0.5px; color: #10B981; background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 2px 8px; border-radius: 4px; text-transform: uppercase; line-height: 1;">
             Active
           </span>
         </h1>
-        <p class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+        <p style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10B981; display: inline-block;"></span>
           Koneksi Stabil
         </p>
       </div>
     </div>
 
     <!-- Right Side Actions -->
-    <div class="flex items-center gap-3">
+    <div style="display: flex; align-items: center; gap: var(--space-3);">
       <!-- Active Provider Badge -->
-      <div class="hidden sm:flex items-center gap-2 bg-slate-850 border border-slate-800 rounded-lg px-3 py-1.5">
-        <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Engine:</span>
-        <span id="activeProvider" class="text-xs font-bold text-white uppercase tracking-wide"><%= provider %> (<%= model %>)</span>
+      <div style="display: flex; align-items: center; gap: var(--space-2); background-color: var(--bg-light); border: 1px solid var(--accent-border); border-radius: var(--radius-md); padding: 6px 12px;">
+        <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Engine:</span>
+        <span id="activeProvider" style="font-size: 11px; font-weight: 700; color: var(--accent-black); text-transform: uppercase; letter-spacing: 0.5px;"><%= provider %> (<%= model %>)</span>
       </div>
 
-      <button id="clearBtn" class="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-rose-400 bg-slate-850 hover:bg-rose-500/10 border border-slate-800 hover:border-rose-500/20 rounded-lg px-3 py-1.5 transition-all">
+      <button id="clearBtn" class="btn" style="font-size: 11px; height: 32px;">
         <i class="bi bi-trash3"></i>
         <span>Hapus Obrolan</span>
       </button>
@@ -134,21 +214,21 @@
   </header>
 
   <!-- Chat Scroll Area -->
-  <div id="chatBox" class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+  <div id="chatBox" class="custom-scrollbar" style="flex: 1; overflow-y: auto; padding: var(--space-6); background-color: var(--bg-light); display: flex; flex-direction: column; gap: var(--space-4);">
     <!-- Welcome message card -->
-    <div id="welcomeCard" class="max-w-2xl mx-auto py-12 px-6 bg-slate-900/40 border border-slate-800/60 rounded-2xl text-center space-y-4 bubble-anim">
-      <div class="w-14 h-14 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 mx-auto flex items-center justify-center">
-        <i class="bi bi-chat-left-heart text-2xl text-indigo-400"></i>
+    <div id="welcomeCard" class="bubble-anim" style="max-width: 480px; margin: 40px auto; padding: var(--space-6); border: 1.5px dashed var(--accent-border); border-radius: var(--radius-lg); background-color: var(--bg-white); text-align: center;">
+      <div class="avatar" style="width: 48px; height: 48px; margin: 0 auto var(--space-4); background-color: rgba(17, 17, 17, 0.05); color: var(--accent-black); font-size: 20px;">
+        <i class="bi bi-chat-left-heart"></i>
       </div>
-      <div class="space-y-1">
-        <h2 class="text-lg font-bold text-white">Selamat Datang di XIONCO AI Assistant!</h2>
-        <p class="text-sm text-slate-400">Tanyakan apapun tentang furnitur, spesifikasi produk, rekomendasi interior, atau topik umum lainnya.</p>
+      <div style="margin-bottom: var(--space-4);">
+        <h2 style="font-size: 15px; font-weight: 700; margin-bottom: var(--space-2); color: var(--text-primary);">Selamat Datang di XIONCO AI Assistant!</h2>
+        <p style="font-size: 12px; color: var(--text-muted);">Tanyakan apapun tentang furnitur, spesifikasi produk, rekomendasi interior, atau topik umum lainnya.</p>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 text-left max-w-lg mx-auto">
-        <button onclick="quickMessage('Rekomendasikan sofa minimalis untuk ruang tamu kecil.')" class="p-3 text-xs bg-slate-850 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 rounded-xl transition text-slate-300 hover:text-white">
+      <div style="display: flex; flex-direction: column; gap: var(--space-2); max-width: 360px; margin: 0 auto; text-align: left;">
+        <button onclick="quickMessage('Rekomendasikan sofa minimalis untuk ruang tamu kecil.')" class="btn" style="justify-content: flex-start; padding: 10px 14px; font-weight: 500; font-size: 11px; width: 100%;">
           🛋️ Rekomendasi sofa kecil
         </button>
-        <button onclick="quickMessage('Apa saja kategori produk yang tersedia di XIONCO?')" class="p-3 text-xs bg-slate-850 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 rounded-xl transition text-slate-300 hover:text-white">
+        <button onclick="quickMessage('Apa saja kategori produk yang tersedia di XIONCO?')" class="btn" style="justify-content: flex-start; padding: 10px 14px; font-weight: 500; font-size: 11px; width: 100%;">
           🏷️ Kategori produk XIONCO
         </button>
       </div>
@@ -157,31 +237,32 @@
 
   <!-- Loading Typing Indicator (Absolute template, cloned dynamically) -->
   <template id="typingTemplate">
-    <div class="flex justify-start items-end gap-3 bubble-anim" id="typingIndicator">
-      <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0">
-        <i class="bi bi-robot text-xs text-indigo-400"></i>
+    <div class="bubble-anim" id="typingIndicator" style="display: flex; justify-content: flex-start; align-items: flex-end; gap: 10px;">
+      <div class="avatar" style="width: 28px; height: 28px; font-size: 12px;">
+        <i class="bi bi-robot"></i>
       </div>
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-3 flex items-center gap-1">
-        <span class="w-2 h-2 rounded-full bg-slate-400 typing-dot"></span>
-        <span class="w-2 h-2 rounded-full bg-slate-400 typing-dot"></span>
-        <span class="w-2 h-2 rounded-full bg-slate-400 typing-dot"></span>
+      <div style="background-color: var(--bg-white); border: 1px solid var(--accent-border); border-radius: var(--radius-md); border-top-left-radius: 0; padding: 10px 14px; display: flex; align-items: center; gap: 4px;">
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
       </div>
     </div>
   </template>
 
   <!-- Input Container -->
-  <div class="bg-slate-900/60 backdrop-blur-md border-t border-slate-800/80 p-4 shrink-0 z-10">
-    <div class="max-w-4xl mx-auto flex items-end gap-2.5 bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 focus-within:border-indigo-500/80 focus-within:ring-2 focus-within:ring-indigo-500/10 transition-all">
+  <div style="background-color: var(--bg-white); border-top: 1px solid var(--accent-border); padding: var(--space-4) var(--space-6); flex-shrink: 0;">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: flex-end; gap: 10px; background-color: var(--bg-light); border: 1.5px solid var(--accent-border); border-radius: var(--radius-lg); padding: 8px 12px; transition: border-color 0.15s ease;">
       <textarea id="inputMsg" rows="1"
-        class="flex-1 bg-transparent border-0 outline-none resize-none text-sm text-slate-200 placeholder-slate-500 py-1.5 focus:ring-0 max-h-32 custom-scrollbar"
+        class="custom-scrollbar"
+        style="flex: 1; background: transparent; border: none; outline: none; resize: none; font-size: 13px; color: var(--text-primary); padding: 4px; line-height: 1.5; min-height: 28px; max-height: 120px;"
         placeholder="Tanyakan sesuatu pada AI..."></textarea>
-      
-      <button id="sendBtn"
-        class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/10 transition">
-        <i class="bi bi-send-fill text-sm"></i>
+
+      <button id="sendBtn" class="btn-primary"
+        style="width: 34px; height: 34px; padding: 0; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: none; cursor: pointer; transition: background-color 0.15s ease;">
+        <i class="bi bi-send-fill" style="font-size: 13px;"></i>
       </button>
     </div>
-    <div class="text-[10px] text-center text-slate-500 mt-2">
+    <div style="font-size: 10px; text-align: center; color: var(--text-muted); margin-top: var(--space-2);">
       Model dapat menghasilkan informasi yang kurang akurat. Mohon tinjau kembali data penting.
     </div>
   </div>

@@ -20,6 +20,64 @@ function resolveModelName(provider, model) {
   return model || '';
 }
 
+// Loads current inventory data from database for AI context
+async function loadInventoryData() {
+  try {
+    // Get products with their stock levels
+    const productsQuery = `
+      SELECT p.id, p.name, p.category, p.price, COALESCE(ps.quantity, 0) as stock
+      FROM products p
+      LEFT JOIN product_stocks ps ON p.id = ps.product_id
+      ORDER BY p.category, p.name
+    `;
+    const productsResult = await db.query(productsQuery);
+
+    // Get categories
+    const categoriesResult = await db.query('SELECT name FROM categories ORDER BY name');
+
+    // Format data for AI context
+    const categories = categoriesResult.rows.map(r => r.name).join(', ');
+
+    let inventoryText = '\n\n=== DATA INVENTORI REAL-TIME ===\n';
+    inventoryText += `Kategori tersedia: ${categories}\n\n`;
+
+    // Group products by category
+    const productsByCategory = {};
+    for (const product of productsResult.rows) {
+      const cat = product.category || 'Uncategorized';
+      if (!productsByCategory[cat]) productsByCategory[cat] = [];
+      productsByCategory[cat].push(product);
+    }
+
+    // Format products by category
+    for (const [category, products] of Object.entries(productsByCategory)) {
+      inventoryText += `Kategori ${category}:\n`;
+      for (const p of products) {
+        const stockStatus = p.stock === 0 ? 'HABIS' : p.stock < 5 ? 'STOK RENDAH' : 'TERSEDIA';
+        const priceFormatted = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(p.price);
+        inventoryText += `  - ${p.name}: ${priceFormatted}, Stok: ${p.stock} unit (${stockStatus})\n`;
+      }
+      inventoryText += '\n';
+    }
+
+    // Add summary
+    const totalProducts = productsResult.rows.length;
+    const outOfStock = productsResult.rows.filter(p => p.stock === 0).length;
+    const lowStock = productsResult.rows.filter(p => p.stock > 0 && p.stock < 5).length;
+
+    inventoryText += `RINGKASAN:\n`;
+    inventoryText += `- Total Produk: ${totalProducts}\n`;
+    inventoryText += `- Produk Habis: ${outOfStock}\n`;
+    inventoryText += `- Produk Stok Rendah (<5): ${lowStock}\n`;
+    inventoryText += '================================\n\n';
+
+    return inventoryText;
+  } catch (err) {
+    console.error('Error loading inventory data:', err.message);
+    return '\n[Data inventori tidak tersedia saat ini]\n';
+  }
+}
+
 // Loads AI configurations dynamically from the settings table, falling back to process.env
 async function loadAISettings() {
   const settings = {
@@ -44,6 +102,11 @@ async function loadAISettings() {
   } catch (err) {
     console.error('Error loading AI settings from DB, using env fallback:', err.message);
   }
+
+  // Load and inject real-time inventory data into system prompt
+  const inventoryData = await loadInventoryData();
+  settings.systemPrompt += inventoryData;
+
   return settings;
 }
 

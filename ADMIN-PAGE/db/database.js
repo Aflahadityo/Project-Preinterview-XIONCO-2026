@@ -121,6 +121,35 @@ async function mockQuery(text, params = []) {
     return { rows };
   }
 
+  // 4b. SELECT p.name, p.category, p.price, COALESCE(ps.quantity, 0) as quantity FROM products p LEFT JOIN product_stocks ps
+  if (sql.includes('FROM products p LEFT JOIN product_stocks ps')) {
+    let rows = mockDb.products.map(p => {
+      const stock = mockDb.product_stocks.find(s => s.product_id === p.id);
+      return {
+        name: p.name,
+        category: p.category,
+        price: p.price,
+        quantity: stock ? stock.quantity : 0
+      };
+    });
+
+    // Handle WHERE clause with LIKE
+    if (sql.includes('WHERE') && sql.includes('LIKE')) {
+      const searchTerm = params[0].replace(/%/g, '').toLowerCase();
+      rows = rows.filter(p =>
+        p.name.toLowerCase().includes(searchTerm) ||
+        p.category.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Handle ORDER BY
+    if (sql.includes('ORDER BY p.category, p.name')) {
+      rows.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
+    }
+
+    return { rows };
+  }
+
   // 5. INSERT INTO products
   if (sql.includes('INSERT INTO products')) {
     const name = params[0];

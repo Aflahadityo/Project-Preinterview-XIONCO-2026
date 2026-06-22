@@ -22,34 +22,44 @@ function quickMessage(text) {
 // Add chat bubble helper
 function addBubble(role, text = '') {
   const isUser = role === 'user';
-  
+
   // Wrapper
   const wrapper = document.createElement('div');
-  wrapper.className = `flex gap-3 bubble-anim ${isUser ? 'justify-end' : 'justify-start items-start'}`;
+  wrapper.className = `bubble-anim`;
+  wrapper.style.cssText = `display: flex; gap: 10px; ${isUser ? 'justify-content: flex-end;' : 'justify-content: flex-start; align-items: flex-start;'}`;
 
   // Avatar for AI
   if (!isUser) {
     const avatar = document.createElement('div');
-    avatar.className = 'w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0 mt-1';
-    avatar.innerHTML = '<i class="bi bi-robot text-xs text-indigo-400"></i>';
+    avatar.className = 'avatar';
+    avatar.style.cssText = 'width: 28px; height: 28px; font-size: 12px; background-color: var(--accent-black); color: white; margin-top: 4px; flex-shrink: 0;';
+    avatar.innerHTML = '<i class="bi bi-robot"></i>';
     wrapper.appendChild(avatar);
   }
 
-  // Bubble
+  // Bubble container
   const container = document.createElement('div');
-  container.className = 'relative group max-w-[85%] sm:max-w-2xl';
+  container.className = 'relative group';
+  container.style.maxWidth = '80%';
 
   const bubble = document.createElement('div');
-  bubble.className = `px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-    isUser 
-      ? 'bg-indigo-600 text-white rounded-tr-none' 
-      : 'bg-slate-900 border border-slate-800 text-slate-100 rounded-tl-none prose-ai'
-  }`;
+  bubble.style.cssText = `
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    border-radius: var(--radius-md);
+    ${
+      isUser
+        ? 'background-color: var(--accent-black); color: #FFFFFF; border-top-right-radius: 0; border: none;'
+        : 'background-color: #FFFFFF; border: 1px solid var(--accent-border); border-top-left-radius: 0; color: var(--text-primary);'
+    }
+  `;
 
   if (isUser) {
     bubble.textContent = text;
   } else {
-    bubble.innerHTML = text ? marked.parse(text) : '<span class="text-slate-500 italic">Berpikir...</span>';
+    bubble.className = 'prose-ai';
+    bubble.innerHTML = text ? marked.parse(text) : '<span class="text-muted italic" style="color: var(--text-muted);">Berpikir...</span>';
   }
 
   container.appendChild(bubble);
@@ -57,14 +67,14 @@ function addBubble(role, text = '') {
   // Copy button for AI bubble
   if (!isUser) {
     const actions = document.createElement('div');
-    actions.className = 'absolute -bottom-6 left-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-10';
+    actions.style.cssText = 'position: absolute; bottom: -20px; left: 4px; opacity: 0; transition: opacity 0.2s; display: flex; gap: 6px; z-index: 10;';
 
     const copyBtn = document.createElement('button');
-    copyBtn.className = 'text-[10px] font-semibold text-slate-500 hover:text-slate-300 flex items-center gap-1 bg-slate-950 border border-slate-850 rounded px-2 py-0.5 transition';
+    copyBtn.style.cssText = 'background: #FFFFFF; border: 1px solid var(--accent-border); border-radius: 4px; font-size: 10px; font-weight: 600; color: var(--text-muted); cursor: pointer; padding: 2px 6px; display: flex; align-items: center; gap: 4px;';
     copyBtn.innerHTML = '<i class="bi bi-clipboard"></i> Salin';
     copyBtn.addEventListener('click', () => {
       navigator.clipboard.writeText(text).then(() => {
-        copyBtn.innerHTML = '<i class="bi bi-check-lg text-emerald-400"></i> Tersalin!';
+        copyBtn.innerHTML = '<i class="bi bi-check-lg" style="color: #10B981 !important;"></i> Tersalin!';
         setTimeout(() => {
           copyBtn.innerHTML = '<i class="bi bi-clipboard"></i> Salin';
         }, 2000);
@@ -73,6 +83,10 @@ function addBubble(role, text = '') {
 
     actions.appendChild(copyBtn);
     container.appendChild(actions);
+
+    // CSS hover simulation
+    container.addEventListener('mouseenter', () => { actions.style.opacity = '1'; });
+    container.addEventListener('mouseleave', () => { actions.style.opacity = '0'; });
   }
 
   wrapper.appendChild(container);
@@ -150,14 +164,14 @@ async function sendMessage() {
               
               // Handle custom error response wrapped inside [ERROR: ...]
               if (fullResponse.startsWith('[ERROR:')) {
-                aiBubble.innerHTML = `<span class="text-rose-400 font-semibold flex items-center gap-1.5"><i class="bi bi-exclamation-triangle-fill"></i> ${fullResponse.slice(8, -1)}</span>`;
+                aiBubble.innerHTML = `<span class="font-semibold" style="color: var(--status-cancel); display: flex; align-items: center; gap: 6px;"><i class="bi bi-exclamation-triangle-fill"></i> ${fullResponse.slice(8, -1)}</span>`;
               } else {
                 aiBubble.innerHTML = marked.parse(fullResponse);
               }
-              
+
               chatBox.scrollTop = chatBox.scrollHeight;
             } else if (data.error) {
-              aiBubble.innerHTML = `<span class="text-rose-400 font-semibold flex items-center gap-1.5"><i class="bi bi-exclamation-triangle-fill"></i> Error: ${data.error}</span>`;
+              aiBubble.innerHTML = `<span class="font-semibold" style="color: var(--status-cancel); display: flex; align-items: center; gap: 6px;"><i class="bi bi-exclamation-triangle-fill"></i> Error: ${data.error}</span>`;
             }
           } catch (e) {
             console.error('Error parsing line:', e);
@@ -173,7 +187,7 @@ async function sendMessage() {
     }
   } catch (error) {
     removeTypingIndicator();
-    aiBubble.innerHTML = `<span class="text-rose-400 font-semibold flex items-center gap-1.5"><i class="bi bi-exclamation-triangle-fill"></i> Gagal terhubung ke server.</span>`;
+    aiBubble.innerHTML = `<span class="font-semibold" style="color: var(--status-cancel); display: flex; align-items: center; gap: 6px;"><i class="bi bi-exclamation-triangle-fill"></i> Gagal terhubung ke server.</span>`;
     console.error('Chat error:', error);
   } finally {
     sendBtn.disabled = false;
